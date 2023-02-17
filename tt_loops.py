@@ -34,8 +34,8 @@ def test(model, device, test_loader):
             correct += pred.eq(target.view_as(pred)).sum().item()
 
     test_loss /= len(test_loader.dataset)
-    accuracy = 100.0 * correct / len(test_loader.dataset)
-    return test_loss, accuracy
+    accuracy = int(10000.0 * correct / len(test_loader.dataset))
+    return test_loss, accuracy/100
 
 def save(path, epoch, model, optimizer):
     torch.save(

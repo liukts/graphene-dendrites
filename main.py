@@ -2,7 +2,7 @@ import torch
 from datasets import get_dataloader
 from encoders import get_encoder,decode
 from norse.torch import LIFParameters
-from models import SeqNet,ConvNet,Model
+from models import SeqNet,DendSeqNet,ConvNet,Model,getSNN
 from optimizers import adam,sgd
 from tt_loops import train,test,save
 from tqdm import trange
@@ -15,31 +15,26 @@ else:
     DEVICE = torch.device("cpu")
 
 batch_sz = 100
-dataset = 'mnist'
-enc_name = 'lif'
-net_name = 'SeqNet'
-seq_len = 50
-p_fmax = 1000
-dt = 0.001
-epochs = 10
-seeds = 1
+date = '230218'
+dataset = 'fmnist'
+enc_name = 'poisson'
+net_name = 'DendSeqNet3'
+seq_len = 100
+p_fmax = 100
+dt = 1e-3
+epochs = 20
+seeds = 5
 hidden = 200
-lif_params = LIFParameters(method='super',alpha=100)
+lr = 5e-4
+hchannels = 2
+ochannels = 2
+lif_params = LIFParameters(method='super',alpha=100,tau_mem_inv=torch.as_tensor(1/0.01))
+# lif_params = LIFParameters(method='super',alpha=100,tau_mem_inv=torch.as_tensor(1.0/2e-2),tau_syn_inv=torch.as_tensor(1.0/1e-2))
 
-target_dir = 'SeqNet_test_mnist'
+target_dir = f'{date}_{dataset}_{net_name}_{enc_name}{p_fmax}_lr{lr}_tlen{seq_len}_hch{hchannels}_och{ochannels}_config2'
 
 train_l,test_l = get_dataloader(dataset,batch_sz)
 encode = get_encoder(enc_name,seq_len,lif_params,p_fmax,dt)
-if net_name == 'ConvNet':
-    spk_net = ConvNet(h1=hidden,lifparams=lif_params)
-elif net_name == 'SeqNet':
-    spk_net = SeqNet(h1=hidden,lifparams=lif_params)
-model = Model(
-    encoder=encode,
-    snn=spk_net,
-    decoder=decode
-).to(DEVICE)
-optimizer = adam(model.parameters())
 
 training_losses = []
 mean_losses = []
@@ -47,6 +42,15 @@ test_losses = []
 accuracies = []
 for i in range(seeds):
     pbar = trange(epochs, ncols=100, unit="epoch")
+    spk_net = getSNN(net_name,hidden,lif_params,hchannels,ochannels,dt)
+    # print(spk_net)
+    model = Model(
+        encoder=encode,
+        snn=spk_net,
+        decoder=decode
+    ).to(DEVICE)
+    optimizer = adam(model.parameters(),lr=lr)
+
     for ep in pbar:
         training_loss,mean_loss = train(model, DEVICE, train_l, optimizer)
         test_loss,accuracy = test(model, DEVICE, test_l)

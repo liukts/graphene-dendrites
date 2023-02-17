@@ -16,6 +16,13 @@ transformFMNIST = torchvision.transforms.Compose(
     ]
 )
 
+transformSVHN = torchvision.transforms.Compose(
+    [
+        torchvision.transforms.ToTensor(),
+        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ]
+)
+
 def get_dataloader(name,batch_size):
 
     if not os.path.isdir('./dataset_repo'):
@@ -65,26 +72,29 @@ def get_dataloader(name,batch_size):
             batch_size=batch_size
         )
 
-    # elif name == 'svhn':
+    elif name == 'svhn':
 
-    #     train_data = torchvision.datasets.SVHN(
-    #         root='./dataset_repo',
-    #         train=True,
-    #         download=True,
-    #         transform=transform
-    #         )
-    #     train_loader = td.DataLoader(
-    #         train_data,
-    #         batch_size=batch_size,
-    #         shuffle=True
-    #         )
-    #     test_loader = td.DataLoader(
-    #         torchvision.datasets.SVHN(
-    #             root='./dataset_repo',
-    #             train=False,
-    #             transform=transform
-    #         ),
-    #         batch_size=batch_size
-    #     )
+        train_data = torchvision.datasets.SVHN(
+            root='./dataset_repo',
+            split='train',
+            download=True,
+            transform=transformSVHN
+            )
+        test_data = torchvision.datasets.SVHN(
+            root='./dataset_repo',
+            split='test',
+            download=True,
+            transform=transformSVHN
+            )
+        train_loader = td.DataLoader(
+            train_data,
+            batch_size=batch_size,
+            shuffle=True
+            )
+        test_loader = td.DataLoader(
+            test_data,
+            batch_size=batch_size,
+            shuffle=False
+        )
 
     return train_loader,test_loader
