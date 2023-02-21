@@ -36,9 +36,9 @@ class Model(torch.nn.Module):
 
     def forward(self, x):
         x = self.encoder(x)
-        x = self.snn(x)
+        x,spks = self.snn(x)
         log_p_y = self.decoder(x)
-        return log_p_y
+        return log_p_y,spks
 
 # MLP containing one hidden layer
 class SeqNet(torch.nn.Module):
@@ -66,13 +66,16 @@ class SeqNet(torch.nn.Module):
             seq_length, batch_size, 10, device=x.device, dtype=x.dtype
         )
 
+        spk_act = 0
         for ts in range(seq_length):
             z = x[ts, :].view(-1, 28*28)
+            spk_act += torch.sum(z)
             z = self.fc0(z)
             z, s0 = self.lif(z, s0)
+            spk_act += torch.sum(z)
             v, so = self.out(z, so)
             voltages[ts, :, :] = v
-        return voltages
+        return voltages,spk_act
     
 # Dendritic MLP containing one hidden layer
 class DendSeqNet(torch.nn.Module):
@@ -161,21 +164,23 @@ class DendSeqNet2(torch.nn.Module):
         voltages = torch.zeros(
             seq_length, batch_size, 10, device=x.device, dtype=x.dtype
         )
-
+        spk_act = 0
         for ts in range(seq_length):
             z = x[ts, :].view(-1, self.feature_size**2)
             z = z
+            spk_act += torch.sum(z)
             z_splits = []
             for i in range(self.hchannels):
                 z_splits.append(z[:,spl_1*i:spl_1*(i+1)])
             z,sdh = self.hidden(z_splits,sdh)
+            spk_act += torch.sum(z)
             z_splits = []
             for i in range(self.ochannels):
                 z_splits.append(z[:,spl_2*i:spl_2*(i+1)])
             v,sdo = self.out(z_splits,sdo)
             voltages[ts, :, :] = v
             # print(v)
-        return voltages
+        return voltages,spk_act
 
 # Dendritic MLP containing one hidden layer without expressive neurons
 class DendSeqNet3(torch.nn.Module):
@@ -212,21 +217,23 @@ class DendSeqNet3(torch.nn.Module):
         voltages = torch.zeros(
             seq_length, batch_size, 10, device=x.device, dtype=x.dtype
         )
-
+        spk_act = 0
         for ts in range(seq_length):
             z = x[ts, :].view(-1, self.feature_size**2)
             z = z
+            spk_act += torch.sum(z)
             z_splits = []
             for i in range(self.hchannels):
                 z_splits.append(z[:,spl_1*i:spl_1*(i+1)])
             z,sdh = self.hidden(z_splits,sdh)
+            spk_act += torch.sum(z)
             z_splits = []
             for i in range(self.ochannels):
                 z_splits.append(z[:,spl_2*i:spl_2*(i+1)])
             v,sdo = self.out(z_splits,sdo)
             voltages[ts, :, :] = v
             # print(v)
-        return voltages
+        return voltages,spk_act
 
 # MLP containing one hidden layer
 class SeqNetSVHN(torch.nn.Module):

@@ -66,7 +66,6 @@ class DLIFWrapper2(torch.nn.Module):
             temp,sd_o[i] = self.dendrite(self.weights[i]((groups[i])),sd[i])
             x0 += temp
         z = threshold(x0 - self.p.v_th, self.p.method, self.p.alpha)
-        print(z)
         for i in range(len(groups)):
             v = (1-z)*sd_o[i].v
             sd_o[i] = sd_o[i]._replace(v=v)
@@ -89,7 +88,7 @@ class DOutWrapper2(torch.nn.Module):
             temp,sd_o[i] = self.dendrite(self.weights[i]((groups[i])),sd[i])
             x0 += temp
         z = x0
-        return z,
+        return z,sd_o
 
 class DLIFWrapper3(torch.nn.Module):
     
