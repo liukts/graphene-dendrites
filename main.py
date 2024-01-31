@@ -15,23 +15,28 @@ else:
     DEVICE = torch.device("cpu")
 
 batch_sz = 100
-date = '230219'
+date = '230927'
 dataset = 'fmnist'
 enc_name = 'poisson'
 net_name = 'DendSeqNet2'
-seq_len = 60
-p_fmax = 100
+seq_len = 20
+p_fmax = 600
 dt = 1e-3
 epochs = 20
 seeds = 1
 hidden = 200
-lr = 1e-4
-hchannels = 2
+lr = 1e-3
+hchannels = 4
 ochannels = 2
-lif_params = LIFParameters(method='super',alpha=100,tau_mem_inv=torch.as_tensor(1/0.01))
-# lif_params = LIFParameters(method='super',alpha=100,tau_mem_inv=torch.as_tensor(1.0/2e-2),tau_syn_inv=torch.as_tensor(1.0/1e-2))
+noise_std = 1
 
-target_dir = f'{date}_{dataset}_{net_name}_{enc_name}{p_fmax}_lr{lr}_tlen{seq_len}_hch{hchannels}_och{ochannels}_config1'
+lif_params = LIFParameters(method='super',alpha=100,tau_mem_inv=torch.as_tensor(1/0.02),tau_syn_inv=torch.as_tensor(1/0.02))
+config = 2
+
+# lif_params = LIFParameters(method='super',alpha=100,tau_mem_inv=torch.as_tensor(1.0/0.01),tau_syn_inv=torch.as_tensor(1.0/0.001))
+# config = 1
+
+target_dir = f'{date}_{dataset}_{net_name}_{enc_name}{p_fmax}_lr{lr}_tlen{seq_len}_hch{hchannels}_och{ochannels}_config{config}'# _noise{noise_std}'
 
 if not os.path.isdir("./outputs/" + target_dir):
     os.mkdir("./outputs/" + target_dir)
@@ -59,15 +64,15 @@ for i in range(seeds):
     for ep in pbar:
         training_loss,mean_loss = train(model, DEVICE, train_l, optimizer)
         test_loss,accuracy,spks = test(model, DEVICE, test_l)
-        # if accuracy > highest:
-        #     model_path = "./outputs/" + target_dir + f"/{dataset}_{net_name}.pt"
-        #     save(
-        #         model_path,
-        #         epoch=ep,
-        #         model=model,
-        #         optimizer=optimizer,
-        #     )
-        #     highest = accuracy
+        if accuracy > highest:
+            model_path = "./outputs/" + target_dir + f"/{dataset}_{net_name}.pt"
+            save(
+                model_path,
+                epoch=ep,
+                model=model,
+                optimizer=optimizer,
+            )
+            highest = accuracy
         training_losses += training_loss
         spk_act.append(spks)
         mean_losses.append(mean_loss)

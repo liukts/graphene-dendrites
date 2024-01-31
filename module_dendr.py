@@ -108,6 +108,8 @@ def _dend_feed_forward_step_jit(
     # compute current jumps
     i_new = i_decayed + input_tensor
 
+    i_new = i_new + torch.empty_like(i_new).normal_(mean=torch.tensor(0.0),std=torch.tensor(0.005)) * dt
+
     return v_decayed, DENDFeedForwardState(v=v_decayed, i=i_new)
 
 def dend_feed_forward_step(
@@ -182,5 +184,7 @@ def dend_feed_forward_step_sparse(
 
     # compute current jumps
     i_new = i_decayed + input_tensor
+    
+    i_new = i_new + torch.empty_like(i_new).normal_(mean=torch.tensor(0.0),std=torch.tensor(0.005)) * dt
 
     return v_decayed.to_sparse(), DENDFeedForwardState(v=v_decayed, i=i_new)
